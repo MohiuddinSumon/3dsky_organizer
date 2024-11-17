@@ -468,26 +468,37 @@ class SkyFileOrganizer:
         # Create folder structure
         destination_folder = self.create_folder_structure(details["categories"])
 
-        # Move the compressed file
+        # First move all related files (zip and images) to destination
+        self.safe_print(f"📦 Moving files to: {os.path.basename(destination_folder)}")
+
+        # Move the compressed file first
         source_path = os.path.join(self.source_directory, filename)
         dest_path = os.path.join(destination_folder, filename)
 
         try:
-            self.safe_print(
-                f"📦 Moving file to: {os.path.basename(destination_folder)}"
-            )
             shutil.move(source_path, dest_path)
-            self.safe_print("✅ File moved successfully")
+            self.safe_print("✅ Compressed file moved successfully")
             self.logger.info(f"Moved file to: {dest_path}")
         except Exception as e:
-            self.safe_print(f"❌ Error moving file: {str(e)}")
+            self.safe_print(f"❌ Error moving compressed file: {str(e)}")
             self.logger.error(f"Error moving file {filename}: {str(e)}")
             return
 
-        # Handle images
-        self.handle_images(file_id, destination_folder, details)
+        # Move any existing related images
+        self.move_related_images(self.source_directory, destination_folder, file_id)
 
-        # Update folder summary
+        # Now attempt to download new image
+        image_path = os.path.join(destination_folder, f"{file_id}.jpeg")
+        download_success = self.download_image(details["image_url"], image_path)
+
+        if download_success:
+            # If download successful, remove any older images
+            self.remove_existing_images(destination_folder, file_id)
+            self.logger.info(f"Downloaded new image for {file_id}")
+        else:
+            self.safe_print("⚠️ Using existing images (if any) due to download failure")
+
+        # Update folder summary after all files are in place
         self.update_folder_summary(destination_folder)
 
     def handle_images(self, file_id, destination_folder, details):
@@ -508,17 +519,26 @@ class SkyFileOrganizer:
         """Remove existing images if new download is successful"""
         image_extensions = [".jpg", ".jpeg", ".png"]
         model_number = file_id.split(".")[0]
+        removed_count = 0
 
         for filename in os.listdir(folder):
             file_base, ext = os.path.splitext(filename)
-            if ext.lower() in image_extensions and file_base.startswith(model_number):
+            if (
+                ext.lower() in image_extensions
+                and file_base.startswith(model_number)
+                and filename != f"{file_id}.jpeg"
+            ):  # Don't remove the newly downloaded image
                 try:
                     os.remove(os.path.join(folder, filename))
+                    removed_count += 1
                     self.logger.info(f"Removed existing image: {filename}")
                 except Exception as e:
                     self.logger.error(
                         f"Error removing existing image {filename}: {str(e)}"
                     )
+
+        if removed_count > 0:
+            print(f"🗑️ Removed {removed_count} older images")
 
     def get_directories(self):
         """Get source and destination directories if not provided"""
@@ -628,10 +648,11 @@ class SkyFileOrganizer:
         return current_path
 
     def download_image(self, image_url, destination):
-        """Download image from URL"""
+        """Download image from URL with proper error handling and timeout"""
         print("📥 Downloading preview image...")
         try:
-            response = requests.get(image_url, stream=True)
+            # Set a timeout for the request
+            response = requests.get(image_url, stream=True, timeout=30)
             response.raise_for_status()
 
             with open(destination, "wb") as f:
@@ -640,9 +661,19 @@ class SkyFileOrganizer:
                         f.write(chunk)
             print("✅ Image downloaded successfully")
             return True
-        except Exception as e:
+        except requests.exceptions.Timeout:
+            print("⚠️ Download timed out")
+            self.logger.error(f"Timeout downloading image {image_url}")
+            return False
+        except requests.exceptions.RequestException as e:
             print(f"❌ Error downloading image: {str(e)}")
             self.logger.error(f"Error downloading image {image_url}: {str(e)}")
+            return False
+        except Exception as e:
+            print(f"❌ Unexpected error while downloading image: {str(e)}")
+            self.logger.error(
+                f"Unexpected error downloading image {image_url}: {str(e)}"
+            )
             return False
 
     def update_folder_summary(self, folder_path):
@@ -685,28 +716,29 @@ class SkyFileOrganizer:
 
     def move_related_images(self, source_dir, dest_dir, model_id):
         """Move any related image files to destination directory"""
-        print("Looking for related images...")
+        print("🔍 Looking for related images...")
         image_extensions = [".jpg", ".jpeg", ".png"]
         model_number = model_id.split(".")[0]
         moved_count = 0
 
+        # Get list of files to move before starting moves
+        files_to_move = []
         for filename in os.listdir(source_dir):
             file_base, ext = os.path.splitext(filename)
-            if ext.lower() in image_extensions:
-                if file_base.startswith(model_number):
-                    source_path = os.path.join(source_dir, filename)
-                    dest_path = os.path.join(dest_dir, filename)
-                    try:
-                        shutil.move(source_path, dest_path)
-                        moved_count += 1
-                        self.logger.info(
-                            f"Moved related image: {filename} to {dest_dir}"
-                        )
-                    except Exception as e:
-                        print(f"❌ Error moving image {filename}: {str(e)}")
-                        self.logger.error(
-                            f"Error moving related image {filename}: {str(e)}"
-                        )
+            if ext.lower() in image_extensions and file_base.startswith(model_number):
+                files_to_move.append(filename)
+
+        # Move files with proper error handling
+        for filename in files_to_move:
+            source_path = os.path.join(source_dir, filename)
+            dest_path = os.path.join(dest_dir, filename)
+            try:
+                shutil.move(source_path, dest_path)
+                moved_count += 1
+                self.logger.info(f"Moved related image: {filename} to {dest_dir}")
+            except Exception as e:
+                print(f"❌ Error moving image {filename}: {str(e)}")
+                self.logger.error(f"Error moving related image {filename}: {str(e)}")
 
         if moved_count > 0:
             print(f"✅ Moved {moved_count} related images")
