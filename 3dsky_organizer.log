@@ -4,3 +4,87 @@
 2024-11-14 16:48:29,860 - INFO - Found model: Bulk floor 2 for file: 2707533.5e42d03329bf9.zip
 2024-11-14 16:48:29,860 - INFO - Moved file to: /home/bs01301/Projects/telegram/zips/pro_3dblak/3ds_models/Textures/Floor coverings/2707533.5e42d03329bf9.zip
 2024-11-14 16:48:35,161 - INFO - Downloaded image to: /home/bs01301/Projects/telegram/zips/pro_3dblak/3ds_models/Textures/Floor coverings/2707533.5e42d03329bf9.jpeg
+2024-11-15 14:35:57,519 - INFO - Created 3ds_models directory at: /home/bs01301/Projects/telegram/zips/3ds_models
+2024-11-15 14:35:58,630 - INFO - Found model: Vintage wooden stool for file: 3452327.60aed493eac56.zip
+2024-11-15 14:35:58,630 - INFO - Moved file to: /home/bs01301/Projects/telegram/zips/3ds_models/Furniture/Chair/3452327.60aed493eac56.zip
+2024-11-15 14:36:01,161 - INFO - Downloaded image to: /home/bs01301/Projects/telegram/zips/3ds_models/Furniture/Chair/3452327.60aed493eac56.jpeg
+2024-11-15 14:36:03,409 - INFO - Found model: Signal kubo for file: 3478088.60c3eb9fcb2fb.zip
+2024-11-15 14:36:03,410 - INFO - Moved file to: /home/bs01301/Projects/telegram/zips/3ds_models/Furniture/Office furniture/3478088.60c3eb9fcb2fb.zip
+2024-11-15 14:36:05,104 - INFO - Downloaded image to: /home/bs01301/Projects/telegram/zips/3ds_models/Furniture/Office furniture/3478088.60c3eb9fcb2fb.jpeg
+2024-11-15 14:36:06,993 - INFO - Found model: Jonathan Adler Maxime Dining Chair for file: 529341.57148750e88c7.zip
+2024-11-15 14:36:06,993 - INFO - Moved file to: /home/bs01301/Projects/telegram/zips/3ds_models/Furniture/Chair/529341.57148750e88c7.zip
+2024-11-15 14:36:08,654 - INFO - Downloaded image to: /home/bs01301/Projects/telegram/zips/3ds_models/Furniture/Chair/529341.57148750e88c7.jpeg
+2024-11-15 14:36:10,519 - INFO - Found model: Greige Design Olaf Chair Set for file: 1228243.5973badc02bb6.zip
+2024-11-15 14:36:10,519 - INFO - Moved file to: /home/bs01301/Projects/telegram/zips/3ds_models/Furniture/Arm chair/1228243.5973badc02bb6.zip
+2024-11-15 14:36:12,408 - INFO - Downloaded image to: /home/bs01301/Projects/telegram/zips/3ds_models/Furniture/Arm chair/1228243.5973badc02bb6.jpeg
+2024-11-17 15:11:25,183 - INFO - Created 3ds_models directory at: /home/bs01301/Projects/telegram/tg-downloader/downloads/test/3ds_models
+2024-11-17 15:11:26,637 - INFO - Found model: Modern cottage. Log Cabin. for file: 59836.529753cb64f79.zip
+2024-11-17 15:11:26,644 - INFO - Found model: Fortunately stool for file: 137045.54735c0d0208a.zip
+2024-11-17 15:11:26,644 - INFO - Found model: Timimoun Lampion for file: 56061.527cb35f95838.zip
+2024-11-17 15:11:26,644 - INFO - Found model: Kartell / Charles Ghost for file: 20917.526b69910da59.zip
+2024-11-17 15:11:26,653 - ERROR - No models found in API response for file_id: 28979.526be4088aa32
+2024-11-17 15:11:26,653 - INFO - Moved file to: /home/bs01301/Projects/telegram/tg-downloader/downloads/test/3ds_models/Furniture/Chair/20917.526b69910da59.zip
+2024-11-17 15:11:26,654 - INFO - Moved file to: /home/bs01301/Projects/telegram/tg-downloader/downloads/test/3ds_models/Lighting/Street lighting/56061.527cb35f95838.zip
+2024-11-17 15:11:26,659 - INFO - Moved file to: /home/bs01301/Projects/telegram/tg-downloader/downloads/test/3ds_models/Furniture/Hallway/137045.54735c0d0208a.zip
+2024-11-17 15:11:26,665 - INFO - Moved file to: /home/bs01301/Projects/telegram/tg-downloader/downloads/test/3ds_models/Architecture/Building/59836.529753cb64f79.zip
+2024-11-17 15:11:28,793 - INFO - Found model: Scratching post from Fauna International for file: 90109.53435b390fb87.zip
+2024-11-17 15:11:28,800 - INFO - Moved file to: /home/bs01301/Projects/telegram/tg-downloader/downloads/test/3ds_models/Decoration/Other decorative objects/90109.53435b390fb87.zip
+2024-11-17 15:11:29,102 - INFO - Removed existing image: 56061.527cb35f95838.jpeg
+2024-11-17 15:11:29,102 - INFO - Downloaded new image for 56061.527cb35f95838
+2024-11-17 15:11:29,652 - INFO - Removed existing image: 59836.529753cb64f79.jpeg
+2024-11-17 15:11:29,652 - INFO - Downloaded new image for 59836.529753cb64f79
+2024-11-17 15:11:30,228 - INFO - Removed existing image: 20917.526b69910da59.jpeg
+2024-11-17 15:11:30,228 - INFO - Downloaded new image for 20917.526b69910da59
+2024-11-17 15:11:31,108 - INFO - Found model: Eichholtz_Collection for file: 135149.54678b377753e.zip
+2024-11-17 15:11:31,114 - INFO - Moved file to: /home/bs01301/Projects/telegram/tg-downloader/downloads/test/3ds_models/Kitchen/Food and drinks/135149.54678b377753e.zip
+2024-11-17 15:11:31,990 - INFO - Found model: Shopping leverets for file: 214602.551f1c753bf55.zip
+2024-11-17 15:11:31,996 - INFO - Moved file to: /home/bs01301/Projects/telegram/tg-downloader/downloads/test/3ds_models/Childroom/Toy/214602.551f1c753bf55.zip
+2024-11-17 15:11:32,084 - INFO - Removed existing image: 137045.54735c0d0208a.jpeg
+2024-11-17 15:11:32,084 - INFO - Downloaded new image for 137045.54735c0d0208a
+2024-11-17 15:11:32,546 - INFO - Found model: Decorative walkway with pebbles for file: 38643.526d87b1a540b.zip
+2024-11-17 15:11:32,552 - INFO - Moved file to: /home/bs01301/Projects/telegram/tg-downloader/downloads/test/3ds_models/Architecture/Paving/38643.526d87b1a540b.zip
+2024-11-17 15:11:32,930 - INFO - Removed existing image: 90109.53435b390fb87.jpeg
+2024-11-17 15:11:32,930 - INFO - Downloaded new image for 90109.53435b390fb87
+2024-11-17 15:11:34,055 - INFO - Found model: slv ARROK GRANITE ROUND for file: 126724.5432a3603362e.zip
+2024-11-17 15:11:34,059 - INFO - Moved file to: /home/bs01301/Projects/telegram/tg-downloader/downloads/test/3ds_models/Lighting/Street lighting/126724.5432a3603362e.zip
+2024-11-17 15:11:34,195 - INFO - Removed existing image: 135149.54678b377753e.jpeg
+2024-11-17 15:11:34,195 - INFO - Downloaded new image for 135149.54678b377753e
+2024-11-17 15:11:34,898 - INFO - Found model: tent design (type 1) for file: 80314.5326fc18bc8ea.zip
+2024-11-17 15:11:34,904 - INFO - Moved file to: /home/bs01301/Projects/telegram/tg-downloader/downloads/test/3ds_models/Architecture/Other/80314.5326fc18bc8ea.zip
+2024-11-17 15:11:36,211 - INFO - Found model: Slab Round Table By Tom Dixon for file: 32285.526cd66035420.zip
+2024-11-17 15:11:36,217 - INFO - Moved file to: /home/bs01301/Projects/telegram/tg-downloader/downloads/test/3ds_models/Furniture/Table/32285.526cd66035420.zip
+2024-11-17 15:11:37,522 - INFO - Removed existing image: 126724.5432a3603362e.jpeg
+2024-11-17 15:11:37,522 - INFO - Downloaded new image for 126724.5432a3603362e
+2024-11-17 15:11:37,797 - INFO - Removed existing image: 80314.5326fc18bc8ea.jpeg
+2024-11-17 15:11:37,797 - INFO - Downloaded new image for 80314.5326fc18bc8ea
+2024-11-17 15:11:39,353 - INFO - Removed existing image: 38643.526d87b1a540b.jpeg
+2024-11-17 15:11:39,353 - INFO - Downloaded new image for 38643.526d87b1a540b
+2024-11-17 15:11:39,492 - INFO - Removed existing image: 214602.551f1c753bf55.jpeg
+2024-11-17 15:11:39,492 - INFO - Downloaded new image for 214602.551f1c753bf55
+2024-11-17 15:11:39,495 - INFO - Removed existing image: 32285.526cd66035420.jpeg
+2024-11-17 15:11:39,495 - INFO - Downloaded new image for 32285.526cd66035420
+2024-11-17 15:11:39,825 - INFO - Found model: Sunbed for a pet from Fauna International for file: 79236.5322b265a92e1.zip
+2024-11-17 15:11:39,829 - INFO - Moved file to: /home/bs01301/Projects/telegram/tg-downloader/downloads/test/3ds_models/Decoration/Other decorative objects/79236.5322b265a92e1.zip
+2024-11-17 15:11:39,880 - INFO - Found model: SLV for file: 126554.5431b83cca821.zip
+2024-11-17 15:11:39,883 - INFO - Moved file to: /home/bs01301/Projects/telegram/tg-downloader/downloads/test/3ds_models/Lighting/Street lighting/126554.5431b83cca821.zip
+2024-11-17 15:11:41,311 - INFO - Found model: Waste bin for file: 65349.52d158344b6f9.zip
+2024-11-17 15:11:41,317 - INFO - Moved file to: /home/bs01301/Projects/telegram/tg-downloader/downloads/test/3ds_models/Architecture/Urban environment/65349.52d158344b6f9.zip
+2024-11-17 15:11:41,812 - INFO - Found model: tent design (type 2) for file: 80319.5326fcfac3f90.zip
+2024-11-17 15:11:41,815 - INFO - Moved file to: /home/bs01301/Projects/telegram/tg-downloader/downloads/test/3ds_models/Architecture/Other/80319.5326fcfac3f90.zip
+2024-11-17 15:11:41,884 - INFO - Found model: Gulliver Cat Carrier / Carrier for pets for file: 132855.545ac082115af.zip
+2024-11-17 15:11:41,891 - INFO - Moved file to: /home/bs01301/Projects/telegram/tg-downloader/downloads/test/3ds_models/Other Models/Miscellaneous/132855.545ac082115af.zip
+2024-11-17 15:11:44,647 - INFO - Removed existing image: 65349.52d158344b6f9.jpeg
+2024-11-17 15:11:44,647 - INFO - Downloaded new image for 65349.52d158344b6f9
+2024-11-17 15:11:46,689 - INFO - Found model: Mansion built from timber. for file: 59831.529753c4f3a97.zip
+2024-11-17 15:11:46,693 - INFO - Moved file to: /home/bs01301/Projects/telegram/tg-downloader/downloads/test/3ds_models/Architecture/Building/59831.529753c4f3a97.zip
+2024-11-17 15:11:47,395 - INFO - Removed existing image: 132855.545ac082115af.jpeg
+2024-11-17 15:11:47,395 - INFO - Downloaded new image for 132855.545ac082115af
+2024-11-17 15:11:47,617 - INFO - Removed existing image: 80319.5326fcfac3f90.jpeg
+2024-11-17 15:11:47,618 - INFO - Downloaded new image for 80319.5326fcfac3f90
+2024-11-17 15:11:47,680 - INFO - Removed existing image: 79236.5322b265a92e1.jpeg
+2024-11-17 15:11:47,680 - INFO - Downloaded new image for 79236.5322b265a92e1
+2024-11-17 15:11:49,667 - INFO - Removed existing image: 126554.5431b83cca821.jpeg
+2024-11-17 15:11:49,668 - INFO - Downloaded new image for 126554.5431b83cca821
+2024-11-17 15:11:54,684 - INFO - Removed existing image: 59831.529753c4f3a97.jpeg
+2024-11-17 15:11:54,685 - INFO - Downloaded new image for 59831.529753c4f3a97
+2024-11-17 15:11:55,692 - INFO - Wrote not found files to /home/bs01301/Projects/telegram/tg-downloader/downloads/test/3ds_models/not_found_models.json

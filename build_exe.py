@@ -10,7 +10,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 icon_path = os.path.join(script_dir, "icon.ico")
 
 # Set the output filename with the .exe extension
-output_filename = "3DSky_Organizer.exe"
+output_filename = "3DSky_Organizer_multiple.exe"
 
 PyInstaller.__main__.run(
     [

@@ -14,6 +14,7 @@ from datetime import datetime
 from pathlib import Path
 from threading import Lock
 from tkinter import filedialog, scrolledtext, ttk
+from typing import Any, Dict
 
 import requests
 
@@ -30,6 +31,52 @@ class IORedirector(io.StringIO):
 
     def flush(self):
         pass
+
+
+class ProcessingMode:
+    FILE_ORGANIZER = "File Organizer"
+    FOLDER_MERGER = "Folder Merger"
+
+    @staticmethod
+    def get_tooltip(mode: str) -> str:
+        tooltips = {
+            ProcessingMode.FILE_ORGANIZER: "Organizes individual 3DSky files into categorized folders",
+            ProcessingMode.FOLDER_MERGER: "Merges pre-organized 3DSky folders while updating folder summaries",
+        }
+        return tooltips.get(mode, "")
+
+
+class CreateToolTip:
+    def __init__(self, widget, text):
+        self.widget = widget
+        self.text = text
+        self.tooltip = None
+        self.widget.bind("<Enter>", self.show_tooltip)
+        self.widget.bind("<Leave>", self.hide_tooltip)
+
+    def show_tooltip(self, event=None):
+        x, y, _, _ = self.widget.bbox("insert")
+        x += self.widget.winfo_rootx() + 25
+        y += self.widget.winfo_rooty() + 20
+
+        self.tooltip = tk.Toplevel(self.widget)
+        self.tooltip.wm_overrideredirect(True)
+        self.tooltip.wm_geometry(f"+{x}+{y}")
+
+        label = ttk.Label(
+            self.tooltip,
+            text=self.text,
+            justify="left",
+            background="#ffffe0",
+            relief="solid",
+            borderwidth=1,
+        )
+        label.pack()
+
+    def hide_tooltip(self, event=None):
+        if self.tooltip:
+            self.tooltip.destroy()
+            self.tooltip = None
 
 
 class SkyFileOrganizerGUI:
@@ -53,6 +100,7 @@ class SkyFileOrganizerGUI:
         self.source_var = tk.StringVar()
         self.dest_var = tk.StringVar()
         self.progress_var = tk.StringVar(value="Ready to start...")
+        self.mode_var = tk.StringVar(value=ProcessingMode.FILE_ORGANIZER)
         self.is_running = False
 
         self.setup_gui()
@@ -64,42 +112,55 @@ class SkyFileOrganizerGUI:
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
 
+        # Mode selection
+        mode_frame = ttk.LabelFrame(main_frame, text="Processing Mode", padding="5")
+        mode_frame.grid(row=0, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=5)
+
+        for i, mode in enumerate(
+            [ProcessingMode.FILE_ORGANIZER, ProcessingMode.FOLDER_MERGER]
+        ):
+            rb = ttk.Radiobutton(
+                mode_frame, text=mode, value=mode, variable=self.mode_var
+            )
+            rb.grid(row=0, column=i, padx=10)
+            CreateToolTip(rb, ProcessingMode.get_tooltip(mode))
+
         # Source directory selection
         ttk.Label(main_frame, text="Source Directory:").grid(
-            row=0, column=0, sticky=tk.W, pady=5
+            row=1, column=0, sticky=tk.W, pady=5
         )
         ttk.Entry(main_frame, textvariable=self.source_var, width=50).grid(
-            row=0, column=1, padx=5, sticky=tk.W + tk.E
+            row=1, column=1, padx=5, sticky=tk.W + tk.E
         )
         ttk.Button(main_frame, text="Browse", command=self.browse_source).grid(
-            row=0, column=2, padx=5
+            row=1, column=2, padx=5
         )
 
         # Destination directory selection
         ttk.Label(main_frame, text="Destination Directory:").grid(
-            row=1, column=0, sticky=tk.W, pady=5
+            row=2, column=0, sticky=tk.W, pady=5
         )
         ttk.Entry(main_frame, textvariable=self.dest_var, width=50).grid(
-            row=1, column=1, padx=5, sticky=tk.W + tk.E
+            row=2, column=1, padx=5, sticky=tk.W + tk.E
         )
         ttk.Button(main_frame, text="Browse", command=self.browse_dest).grid(
-            row=1, column=2, padx=5
+            row=2, column=2, padx=5
         )
 
         # Progress information
         ttk.Label(main_frame, text="Progress:").grid(
-            row=2, column=0, sticky=tk.W, pady=5
+            row=3, column=0, sticky=tk.W, pady=5
         )
         ttk.Label(main_frame, textvariable=self.progress_var).grid(
-            row=2, column=1, columnspan=2, sticky=tk.W, pady=5
+            row=3, column=1, columnspan=2, sticky=tk.W, pady=5
         )
 
         # Console output
         console_frame = ttk.LabelFrame(main_frame, text="Console Output", padding="5")
         console_frame.grid(
-            row=3, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5
+            row=4, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5
         )
-        main_frame.rowconfigure(3, weight=1)
+        main_frame.rowconfigure(4, weight=1)
         main_frame.columnconfigure(1, weight=1)
 
         self.console = scrolledtext.ScrolledText(
@@ -109,7 +170,7 @@ class SkyFileOrganizerGUI:
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=4, column=0, columnspan=3, pady=10)
+        button_frame.grid(row=5, column=0, columnspan=3, pady=10)
 
         self.start_button = ttk.Button(
             button_frame, text="Start Processing", command=self.start_processing
@@ -157,15 +218,18 @@ class SkyFileOrganizerGUI:
 
         # Start processing in a separate thread
         thread = threading.Thread(
-            target=self.run_processor, args=(source_dir, dest_dir)
+            target=self.run_processor, args=(source_dir, dest_dir, self.mode_var.get())
         )
         thread.daemon = True
         thread.start()
 
-    def run_processor(self, source_dir, dest_dir):
+    def run_processor(self, source_dir, dest_dir, mode):
         try:
             organizer = SkyFileOrganizer(source_dir, dest_dir)
-            organizer.process_files()
+            if mode == ProcessingMode.FILE_ORGANIZER:
+                organizer.process_files()
+            else:
+                organizer.merge_folders()
         except Exception as e:
             self.console.insert(tk.END, f"\n❌ Error: {str(e)}\n")
         finally:
@@ -176,18 +240,25 @@ class SkyFileOrganizerGUI:
 
 
 class SkyFileOrganizer:
-    def __init__(self, source_directory=None, destination_directory=None, max_workers=5):
+    def __init__(
+        self, source_directory=None, destination_directory=None, max_workers=5
+    ):
         self.source_directory = source_directory
         self.destination_directory = destination_directory
         self.max_workers = max_workers
         self.models_root = None
         self.api_url = "https://3dsky.org/api/models"
-        self.image_base_url = "https://b6.3ddd.ru/media/cache/tuk_model_custom_filter_ang_en/"
+        self.image_base_url = (
+            "https://b6.3ddd.ru/media/cache/tuk_model_custom_filter_ang_en/"
+        )
         self.not_found_log = "not_found_models.json"
         self.not_found_files = {}
         self.not_found_lock = Lock()  # Lock for thread-safe dict access
         self.print_lock = Lock()  # Lock for thread-safe printing
         self.processing_queue = queue.Queue()
+        self.processed_count = 0  # Add counter for processed files
+        self.total_files = 0  # Add total files counter
+        self.counter_lock = Lock()  # Add lock for thread-safe counting
         self.threads = []
         self.setup_logging()
 
@@ -201,9 +272,87 @@ class SkyFileOrganizer:
         logging.basicConfig(
             filename="3dsky_organizer.log",
             level=logging.INFO,
-            format="%(asctime)s - %(levelname)s - %(message)s"
+            format="%(asctime)s - %(levelname)s - %(message)s",
         )
         self.logger = logging
+
+    def merge_folders(self):
+        """Merge pre-organized folders from source to destination"""
+        source_dir, dest_dir = self.get_directories()
+
+        if not os.path.exists(os.path.join(source_dir, "3ds_models")):
+            self.safe_print("❌ Source directory does not contain a 3ds_models folder")
+            return
+
+        source_models_dir = os.path.join(source_dir, "3ds_models")
+        dest_models_dir = os.path.join(dest_dir, "3ds_models")
+
+        if not os.path.exists(dest_models_dir):
+            os.makedirs(dest_models_dir)
+
+        self.safe_print("\n🔄 Starting folder merge process...")
+
+        # Walk through all categories in source
+        for root, dirs, files in os.walk(source_models_dir):
+            relative_path = os.path.relpath(root, source_models_dir)
+            dest_path = os.path.join(dest_models_dir, relative_path)
+
+            # Create destination directory if it doesn't exist
+            if not os.path.exists(dest_path):
+                os.makedirs(dest_path)
+                self.safe_print(f"📁 Created directory: {relative_path}")
+
+            # Move all files
+            for file in files:
+                if file == "folder_summary.json":
+                    continue  # Skip summary files, they'll be regenerated
+
+                source_file = os.path.join(root, file)
+                dest_file = os.path.join(dest_path, file)
+
+                if os.path.exists(dest_file):
+                    self.safe_print(f"⚠️ File already exists, skipping: {file}")
+                    continue
+
+                try:
+                    shutil.move(source_file, dest_file)
+                    self.safe_print(f"✅ Moved: {file}")
+                except Exception as e:
+                    self.safe_print(f"❌ Error moving {file}: {str(e)}")
+
+            # Update folder summary for current directory
+            self.update_folder_summary(dest_path)
+
+        # Clean up empty directories in source
+        self.cleanup_empty_dirs(source_models_dir)
+
+        # Update all folder summaries from bottom up
+        self.update_all_folder_summaries(dest_models_dir)
+        self.safe_print("\n✨ Folder merge complete!")
+
+    def cleanup_empty_dirs(self, directory):
+        """Recursively remove empty directories"""
+        for root, dirs, files in os.walk(directory, topdown=False):
+            for dir_name in dirs:
+                dir_path = os.path.join(root, dir_name)
+                try:
+                    os.rmdir(dir_path)
+                    self.safe_print(f"🗑️ Removed empty directory: {dir_path}")
+                except OSError:
+                    # Directory not empty, skip it
+                    pass
+
+        # Try to remove the root directory itself if empty
+        try:
+            os.rmdir(directory)
+            self.safe_print(f"🗑️ Removed empty root directory: {directory}")
+        except OSError:
+            pass
+
+    def update_all_folder_summaries(self, start_path):
+        """Update folder summaries for all directories from bottom up"""
+        for root, dirs, files in os.walk(start_path, topdown=False):
+            self.update_folder_summary(root)
 
     def process_files(self):
         """Process all files using multiple threads"""
@@ -213,25 +362,26 @@ class SkyFileOrganizer:
             self.logger.error(f"Source directory {source_dir} does not exist")
             return
         if not os.path.exists(dest_dir):
-            self.safe_print(f"❌ Error: Destination directory {dest_dir} does not exist")
+            self.safe_print(
+                f"❌ Error: Destination directory {dest_dir} does not exist"
+            )
             self.logger.error(f"Destination directory {dest_dir} does not exist")
             return
 
         # Get all compressed files
         compressed_files = [
-            f for f in os.listdir(source_dir)
+            f
+            for f in os.listdir(source_dir)
             if f.lower().endswith((".zip", ".rar", ".7z"))
         ]
 
-        total_files = len(compressed_files)
-        self.safe_print(f"\n🔍 Found {total_files} compressed files to process")
+        self.total_files = len(compressed_files)
+        self.safe_print(f"\n🔍 Found {self.total_files} compressed files to process")
 
         # Initialize worker threads
         for i in range(self.max_workers):
             thread = threading.Thread(
-                target=self.worker,
-                args=(total_files,),
-                name=f"Worker-{i+1}"
+                target=self.worker, args=(self.total_files,), name=f"Worker-{i+1}"
             )
             thread.daemon = True
             thread.start()
@@ -252,7 +402,9 @@ class SkyFileOrganizer:
         # Write not found files to JSON in the destination directory
         not_found_log_path = os.path.join(self.models_root, self.not_found_log)
         if self.not_found_files:
-            self.safe_print(f"\n⚠️ Writing {len(self.not_found_files)} not found files to log")
+            self.safe_print(
+                f"\n⚠️ Writing {len(self.not_found_files)} not found files to log"
+            )
             with open(not_found_log_path, "w", encoding="utf-8") as f:
                 json.dump(self.not_found_files, f, indent=4)
             self.logger.info(f"Wrote not found files to {not_found_log_path}")
@@ -271,8 +423,12 @@ class SkyFileOrganizer:
                 break
 
             try:
-                processed_count += 1
-                self.safe_print(f"\n📦 Processing file {processed_count}/{total_files}: {filename}")
+                with self.counter_lock:
+                    self.processed_count += 1
+                    current_count = self.processed_count
+                self.safe_print(
+                    f"\n📦 Processing file {current_count}/{total_files}: {filename}"
+                )
                 self.process_single_file(filename)
             except Exception as e:
                 self.safe_print(f"❌ Error processing {filename}: {str(e)}")
@@ -308,7 +464,9 @@ class SkyFileOrganizer:
         dest_path = os.path.join(destination_folder, filename)
 
         try:
-            self.safe_print(f"📦 Moving file to: {os.path.basename(destination_folder)}")
+            self.safe_print(
+                f"📦 Moving file to: {os.path.basename(destination_folder)}"
+            )
             shutil.move(source_path, dest_path)
             self.safe_print("✅ File moved successfully")
             self.logger.info(f"Moved file to: {dest_path}")
@@ -328,7 +486,7 @@ class SkyFileOrganizer:
         # First try to download new image
         image_path = os.path.join(destination_folder, f"{file_id}.jpeg")
         download_success = self.download_image(details["image_url"], image_path)
-        
+
         if download_success:
             # If download successful, remove any existing images
             self.remove_existing_images(destination_folder, file_id)
@@ -341,7 +499,7 @@ class SkyFileOrganizer:
         """Remove existing images if new download is successful"""
         image_extensions = [".jpg", ".jpeg", ".png"]
         model_number = file_id.split(".")[0]
-        
+
         for filename in os.listdir(folder):
             file_base, ext = os.path.splitext(filename)
             if ext.lower() in image_extensions and file_base.startswith(model_number):
@@ -349,7 +507,9 @@ class SkyFileOrganizer:
                     os.remove(os.path.join(folder, filename))
                     self.logger.info(f"Removed existing image: {filename}")
                 except Exception as e:
-                    self.logger.error(f"Error removing existing image {filename}: {str(e)}")
+                    self.logger.error(
+                        f"Error removing existing image {filename}: {str(e)}"
+                    )
 
     def get_directories(self):
         """Get source and destination directories if not provided"""
@@ -373,14 +533,14 @@ class SkyFileOrganizer:
             self.logger.info(f"Created 3ds_models directory at: {self.models_root}")
 
         return self.source_directory, self.destination_directory
-    
+
     def extract_file_id(self, filename):
         """Extract the file ID from filename"""
         base_name = os.path.splitext(filename)[0]
         if re.match(r"^\d+\.[a-f0-9]+$", base_name):
             return base_name
         return None
-    
+
     def get_model_details(self, file_id):
         """Get model details from 3dsky.org API"""
         print(f"\nFetching details for model ID: {file_id}")
@@ -476,10 +636,9 @@ class SkyFileOrganizer:
             self.logger.error(f"Error downloading image {image_url}: {str(e)}")
             return False
 
-
     def update_folder_summary(self, folder_path):
-        """Update folder summary JSON file"""
-        print("\nUpdating folder summary...")
+        """Update folder summary JSON file with accurate subfolder counting"""
+        print(f"\nUpdating folder summary for: {folder_path}")
         summary = {
             "total_files": 0,
             "total_subfolders": 0,
@@ -487,14 +646,21 @@ class SkyFileOrganizer:
             "last_updated": time.strftime("%Y-%m-%d %H:%M:%S"),
         }
 
-        # Count all files and subfolders
-        for root, dirs, files in os.walk(folder_path):
-            summary["total_subfolders"] += len(dirs)
-            for file in files:
-                if file != "folder_summary.json":
-                    summary["total_files"] += 1
-                    ext = os.path.splitext(file)[1].lower()
-                    summary["file_types"][ext] = summary["file_types"].get(ext, 0) + 1
+        # Get immediate subfolders
+        immediate_subfolders = [
+            d
+            for d in os.listdir(folder_path)
+            if os.path.isdir(os.path.join(folder_path, d))
+        ]
+        summary["total_subfolders"] = len(immediate_subfolders)
+
+        # Count files only in current directory
+        for item in os.listdir(folder_path):
+            item_path = os.path.join(folder_path, item)
+            if os.path.isfile(item_path) and item != "folder_summary.json":
+                summary["total_files"] += 1
+                ext = os.path.splitext(item)[1].lower()
+                summary["file_types"][ext] = summary["file_types"].get(ext, 0) + 1
 
         # Write summary to JSON file
         summary_path = os.path.join(folder_path, "folder_summary.json")
@@ -502,7 +668,9 @@ class SkyFileOrganizer:
             json.dump(summary, f, indent=4)
 
         print(
-            f"📊 Summary updated: {summary['total_files']} files in {summary['total_subfolders']} subfolders"
+            f"📊 Summary updated for {os.path.basename(folder_path)}: "
+            f"{summary['total_files']} files, "
+            f"{summary['total_subfolders']} immediate subfolders"
         )
         return summary
 
@@ -535,6 +703,7 @@ class SkyFileOrganizer:
             print(f"✅ Moved {moved_count} related images")
         else:
             print("ℹ️ No related images found")
+
 
 def main():
     root = tk.Tk()
