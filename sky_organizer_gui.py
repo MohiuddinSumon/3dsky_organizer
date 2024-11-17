@@ -302,11 +302,19 @@ class SkyFileOrganizer:
                 os.makedirs(dest_path)
                 self.safe_print(f"📁 Created directory: {relative_path}")
 
+            # First, remove any existing summary files
+            summary_path = os.path.join(root, "folder_summary.json")
+            if os.path.exists(summary_path):
+                try:
+                    os.remove(summary_path)
+                    self.safe_print(f"🗑️ Removed old summary file from: {relative_path}")
+                except Exception as e:
+                    self.safe_print(f"❌ Error removing summary file: {str(e)}")
+
             # Move all files
             for file in files:
                 if file == "folder_summary.json":
-                    file.unlink()  # Delete summary file
-                    continue  # Skip summary files, they'll be regenerated
+                    continue  # Skip summary files, they should be deleted already
 
                 source_file = os.path.join(root, file)
                 dest_file = os.path.join(dest_path, file)
