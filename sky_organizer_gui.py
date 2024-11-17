@@ -305,6 +305,7 @@ class SkyFileOrganizer:
             # Move all files
             for file in files:
                 if file == "folder_summary.json":
+                    file.unlink()  # Delete summary file
                     continue  # Skip summary files, they'll be regenerated
 
                 source_file = os.path.join(root, file)
