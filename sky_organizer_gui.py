@@ -36,12 +36,14 @@ class IORedirector(io.StringIO):
 class ProcessingMode:
     FILE_ORGANIZER = "File Organizer"
     FOLDER_MERGER = "Folder Merger"
+    FILE_COLLECTOR = "File Collector"
 
     @staticmethod
     def get_tooltip(mode: str) -> str:
         tooltips = {
             ProcessingMode.FILE_ORGANIZER: "Organizes individual 3DSky files into categorized folders",
             ProcessingMode.FOLDER_MERGER: "Merges pre-organized 3DSky folders while updating folder summaries",
+            ProcessingMode.FILE_COLLECTOR: "Collects all zip and image files from source directory and its subdirectories",
         }
         return tooltips.get(mode, "")
 
@@ -102,6 +104,7 @@ class SkyFileOrganizerGUI:
         self.progress_var = tk.StringVar(value="Ready to start...")
         self.mode_var = tk.StringVar(value=ProcessingMode.FILE_ORGANIZER)
         self.is_running = False
+        self.operation_var = tk.StringVar(value="move")
 
         self.setup_gui()
 
@@ -117,7 +120,11 @@ class SkyFileOrganizerGUI:
         mode_frame.grid(row=0, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=5)
 
         for i, mode in enumerate(
-            [ProcessingMode.FILE_ORGANIZER, ProcessingMode.FOLDER_MERGER]
+            [
+                ProcessingMode.FILE_ORGANIZER,
+                ProcessingMode.FOLDER_MERGER,
+                ProcessingMode.FILE_COLLECTOR,
+            ]
         ):
             rb = ttk.Radiobutton(
                 mode_frame, text=mode, value=mode, variable=self.mode_var
@@ -125,42 +132,64 @@ class SkyFileOrganizerGUI:
             rb.grid(row=0, column=i, padx=10)
             CreateToolTip(rb, ProcessingMode.get_tooltip(mode))
 
+        # Add operation selection (after mode selection)
+        self.operation_frame = ttk.LabelFrame(
+            main_frame, text="Operation Type", padding="5"
+        )
+        self.operation_frame.grid(
+            row=1, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=5
+        )
+        self.operation_frame.grid_remove()  # Hidden by default
+
+        ttk.Radiobutton(
+            self.operation_frame,
+            text="Move Files",
+            value="move",
+            variable=self.operation_var,
+        ).grid(row=0, column=0, padx=10)
+        ttk.Radiobutton(
+            self.operation_frame,
+            text="Copy Files",
+            value="copy",
+            variable=self.operation_var,
+        ).grid(row=0, column=1, padx=10)
+
         # Source directory selection
         ttk.Label(main_frame, text="Source Directory:").grid(
-            row=1, column=0, sticky=tk.W, pady=5
+            row=2, column=0, sticky=tk.W, pady=5
         )
         ttk.Entry(main_frame, textvariable=self.source_var, width=50).grid(
-            row=1, column=1, padx=5, sticky=tk.W + tk.E
+            row=2, column=1, padx=5, sticky=tk.W + tk.E
         )
         ttk.Button(main_frame, text="Browse", command=self.browse_source).grid(
-            row=1, column=2, padx=5
+            row=2, column=2, padx=5
         )
 
         # Destination directory selection
         ttk.Label(main_frame, text="Destination Directory:").grid(
-            row=2, column=0, sticky=tk.W, pady=5
+            row=3, column=0, sticky=tk.W, pady=5
         )
         ttk.Entry(main_frame, textvariable=self.dest_var, width=50).grid(
-            row=2, column=1, padx=5, sticky=tk.W + tk.E
+            row=3, column=1, padx=5, sticky=tk.W + tk.E
         )
         ttk.Button(main_frame, text="Browse", command=self.browse_dest).grid(
-            row=2, column=2, padx=5
+            row=3, column=2, padx=5
         )
 
         # Progress information
         ttk.Label(main_frame, text="Progress:").grid(
-            row=3, column=0, sticky=tk.W, pady=5
+            row=4, column=0, sticky=tk.W, pady=5
         )
         ttk.Label(main_frame, textvariable=self.progress_var).grid(
-            row=3, column=1, columnspan=2, sticky=tk.W, pady=5
+            row=4, column=1, columnspan=2, sticky=tk.W, pady=5
         )
 
         # Console output
         console_frame = ttk.LabelFrame(main_frame, text="Console Output", padding="5")
         console_frame.grid(
-            row=4, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5
+            row=5, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5
         )
-        main_frame.rowconfigure(4, weight=1)
+        main_frame.rowconfigure(5, weight=1)
         main_frame.columnconfigure(1, weight=1)
 
         self.console = scrolledtext.ScrolledText(
@@ -170,7 +199,7 @@ class SkyFileOrganizerGUI:
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=5, column=0, columnspan=3, pady=10)
+        button_frame.grid(row=6, column=0, columnspan=3, pady=10)
 
         self.start_button = ttk.Button(
             button_frame, text="Start Processing", command=self.start_processing
@@ -180,6 +209,9 @@ class SkyFileOrganizerGUI:
         ttk.Button(button_frame, text="Exit", command=self.root.quit).pack(
             side=tk.LEFT, padx=5
         )
+
+        # Add mode change handler
+        self.mode_var.trace_add("write", self.on_mode_change)
 
     def browse_source(self):
         directory = filedialog.askdirectory()
@@ -228,8 +260,10 @@ class SkyFileOrganizerGUI:
             organizer = SkyFileOrganizer(source_dir, dest_dir)
             if mode == ProcessingMode.FILE_ORGANIZER:
                 organizer.process_files()
-            else:
-                organizer.merge_folders()
+            elif mode == ProcessingMode.FOLDER_MERGER:
+                organizer.merge_folders(operation=self.operation_var.get())
+            else:  # FILE_COLLECTOR
+                organizer.collect_files()
         except Exception as e:
             self.console.insert(tk.END, f"\n❌ Error: {str(e)}\n")
         finally:
@@ -237,6 +271,13 @@ class SkyFileOrganizerGUI:
             self.start_button.configure(state="normal")
             self.progress_var.set("Processing complete!")
             sys.stdout = sys.__stdout__
+
+    def on_mode_change(self, *args):
+        """Show/hide operation frame based on selected mode"""
+        if self.mode_var.get() == ProcessingMode.FOLDER_MERGER:
+            self.operation_frame.grid()
+        else:
+            self.operation_frame.grid_remove()
 
 
 class SkyFileOrganizer:
@@ -276,7 +317,7 @@ class SkyFileOrganizer:
         )
         self.logger = logging
 
-    def merge_folders(self):
+    def merge_folders(self, operation="move"):
         """Merge pre-organized folders from source to destination"""
         source_dir, dest_dir = self.get_directories()
 
@@ -290,7 +331,7 @@ class SkyFileOrganizer:
         if not os.path.exists(dest_models_dir):
             os.makedirs(dest_models_dir)
 
-        self.safe_print("\n🔄 Starting folder merge process...")
+        self.safe_print(f"\n🔄 Starting folder {operation} process...")
 
         # Walk through all categories in source
         for root, dirs, files in os.walk(source_models_dir):
@@ -314,7 +355,7 @@ class SkyFileOrganizer:
             # Move all files
             for file in files:
                 if file == "folder_summary.json":
-                    continue  # Skip summary files, they should be deleted already
+                    continue
 
                 source_file = os.path.join(root, file)
                 dest_file = os.path.join(dest_path, file)
@@ -324,20 +365,60 @@ class SkyFileOrganizer:
                     continue
 
                 try:
-                    shutil.move(source_file, dest_file)
-                    self.safe_print(f"✅ Moved: {file}")
+                    if operation == "move":
+                        shutil.move(source_file, dest_file)
+                    else:  # copy
+                        shutil.copy2(source_file, dest_file)
+                    self.safe_print(f"✅ {operation.capitalize()}d: {file}")
                 except Exception as e:
-                    self.safe_print(f"❌ Error moving {file}: {str(e)}")
+                    self.safe_print(f"❌ Error {operation}ing {file}: {str(e)}")
 
             # Update folder summary for current directory
             self.update_folder_summary(dest_path)
 
-        # Clean up empty directories in source
-        self.cleanup_empty_dirs(source_models_dir)
+        # Clean up empty directories in source if moving
+        if operation == "move":
+            self.cleanup_empty_dirs(source_models_dir)
 
         # Update all folder summaries from bottom up
         self.update_all_folder_summaries(dest_models_dir)
-        self.safe_print("\n✨ Folder merge complete!")
+        self.safe_print(f"\n✨ Folder {operation} complete!")
+
+    def collect_files(self):
+        """Collect all zip and image files from source directory and its subdirectories"""
+        source_dir, dest_dir = self.get_directories()
+
+        if not os.path.exists(dest_dir):
+            os.makedirs(dest_dir)
+
+        self.safe_print("\n🔍 Starting file collection process...")
+
+        # Supported file extensions
+        supported_extensions = {".zip", ".rar", ".7z", ".jpg", ".jpeg", ".png"}
+
+        # Walk through all subdirectories
+        for root, _, files in os.walk(source_dir):
+            for file in files:
+                ext = os.path.splitext(file)[1].lower()
+                if ext in supported_extensions:
+                    source_file = os.path.join(root, file)
+                    dest_file = os.path.join(dest_dir, file)
+
+                    # Handle duplicate filenames
+                    if os.path.exists(dest_file):
+                        base, ext = os.path.splitext(file)
+                        counter = 1
+                        while os.path.exists(dest_file):
+                            dest_file = os.path.join(dest_dir, f"{base}_{counter}{ext}")
+                            counter += 1
+
+                    try:
+                        shutil.copy2(source_file, dest_file)
+                        self.safe_print(f"✅ Copied: {file}")
+                    except Exception as e:
+                        self.safe_print(f"❌ Error copying {file}: {str(e)}")
+
+        self.safe_print("\n✨ File collection complete!")
 
     def cleanup_empty_dirs(self, directory):
         """Recursively remove empty directories"""
