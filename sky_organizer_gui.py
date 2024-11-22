@@ -105,6 +105,7 @@ class SkyFileOrganizerGUI:
         self.mode_var = tk.StringVar(value=ProcessingMode.FILE_ORGANIZER)
         self.is_running = False
         self.operation_var = tk.StringVar(value="move")
+        self.download_preview_var = tk.BooleanVar(value=True)  # Default to True
 
         self.setup_gui()
 
@@ -154,42 +155,56 @@ class SkyFileOrganizerGUI:
             variable=self.operation_var,
         ).grid(row=0, column=1, padx=10)
 
+        # Add preview download option after operation frame
+        self.preview_frame = ttk.LabelFrame(
+            main_frame, text="Preview Options", padding="5"
+        )
+        self.preview_frame.grid(
+            row=2, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=5
+        )
+
+        ttk.Checkbutton(
+            self.preview_frame,
+            text="Download preview images from 3DSky",
+            variable=self.download_preview_var,
+        ).grid(row=0, column=0, padx=10)
+
         # Source directory selection
         ttk.Label(main_frame, text="Source Directory:").grid(
-            row=2, column=0, sticky=tk.W, pady=5
+            row=3, column=0, sticky=tk.W, pady=5
         )
         ttk.Entry(main_frame, textvariable=self.source_var, width=50).grid(
-            row=2, column=1, padx=5, sticky=tk.W + tk.E
+            row=3, column=1, padx=5, sticky=tk.W + tk.E
         )
         ttk.Button(main_frame, text="Browse", command=self.browse_source).grid(
-            row=2, column=2, padx=5
+            row=3, column=2, padx=5
         )
 
         # Destination directory selection
         ttk.Label(main_frame, text="Destination Directory:").grid(
-            row=3, column=0, sticky=tk.W, pady=5
+            row=4, column=0, sticky=tk.W, pady=5
         )
         ttk.Entry(main_frame, textvariable=self.dest_var, width=50).grid(
-            row=3, column=1, padx=5, sticky=tk.W + tk.E
+            row=4, column=1, padx=5, sticky=tk.W + tk.E
         )
         ttk.Button(main_frame, text="Browse", command=self.browse_dest).grid(
-            row=3, column=2, padx=5
+            row=4, column=2, padx=5
         )
 
         # Progress information
         ttk.Label(main_frame, text="Progress:").grid(
-            row=4, column=0, sticky=tk.W, pady=5
+            row=5, column=0, sticky=tk.W, pady=5
         )
         ttk.Label(main_frame, textvariable=self.progress_var).grid(
-            row=4, column=1, columnspan=2, sticky=tk.W, pady=5
+            row=5, column=1, columnspan=2, sticky=tk.W, pady=5
         )
 
         # Console output
         console_frame = ttk.LabelFrame(main_frame, text="Console Output", padding="5")
         console_frame.grid(
-            row=5, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5
+            row=6, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5
         )
-        main_frame.rowconfigure(5, weight=1)
+        main_frame.rowconfigure(6, weight=1)
         main_frame.columnconfigure(1, weight=1)
 
         self.console = scrolledtext.ScrolledText(
@@ -199,7 +214,7 @@ class SkyFileOrganizerGUI:
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=6, column=0, columnspan=3, pady=10)
+        button_frame.grid(row=7, column=0, columnspan=3, pady=10)
 
         self.start_button = ttk.Button(
             button_frame, text="Start Processing", command=self.start_processing
@@ -257,7 +272,9 @@ class SkyFileOrganizerGUI:
 
     def run_processor(self, source_dir, dest_dir, mode):
         try:
-            organizer = SkyFileOrganizer(source_dir, dest_dir)
+            organizer = SkyFileOrganizer(
+                source_dir, dest_dir, download_previews=self.download_preview_var.get()
+            )
             if mode == ProcessingMode.FILE_ORGANIZER:
                 organizer.process_files()
             elif mode == ProcessingMode.FOLDER_MERGER:
@@ -273,16 +290,27 @@ class SkyFileOrganizerGUI:
             sys.stdout = sys.__stdout__
 
     def on_mode_change(self, *args):
-        """Show/hide operation frame based on selected mode"""
+        """Show/hide operation frame and preview frame based on selected mode"""
+        # Show/hide operation frame
         if self.mode_var.get() == ProcessingMode.FOLDER_MERGER:
             self.operation_frame.grid()
         else:
             self.operation_frame.grid_remove()
 
+        # Show/hide preview frame
+        if self.mode_var.get() == ProcessingMode.FILE_ORGANIZER:
+            self.preview_frame.grid()
+        else:
+            self.preview_frame.grid_remove()
+
 
 class SkyFileOrganizer:
     def __init__(
-        self, source_directory=None, destination_directory=None, max_workers=5
+        self,
+        source_directory=None,
+        destination_directory=None,
+        max_workers=5,
+        download_previews=True,
     ):
         self.source_directory = source_directory
         self.destination_directory = destination_directory
@@ -301,6 +329,7 @@ class SkyFileOrganizer:
         self.total_files = 0  # Add total files counter
         self.counter_lock = Lock()  # Add lock for thread-safe counting
         self.threads = []
+        self.download_previews = download_previews
         self.setup_logging()
 
     def safe_print(self, *args, **kwargs):
@@ -565,36 +594,81 @@ class SkyFileOrganizer:
             self.logger.error(f"Error moving file {filename}: {str(e)}")
             return
 
-        # Move any existing related images
-        self.move_related_images(self.source_directory, destination_folder, file_id)
+        # Now attempt to download new image only if enabled
+        if self.download_previews:
+            image_path = os.path.join(destination_folder, f"{file_id}.jpeg")
+            download_success = self.download_image(details["image_url"], image_path)
 
-        # Now attempt to download new image
-        image_path = os.path.join(destination_folder, f"{file_id}.jpeg")
-        download_success = self.download_image(details["image_url"], image_path)
-
-        if download_success:
-            # If download successful, remove any older images
-            self.remove_existing_images(destination_folder, file_id)
-            self.logger.info(f"Downloaded new image for {file_id}")
+            if download_success:
+                # Compare and keep only the best quality image
+                self.handle_duplicate_images(destination_folder, file_id, image_path)
+            else:
+                self.safe_print(
+                    "⚠️ Using existing images (if any) due to download failure"
+                )
         else:
-            self.safe_print("⚠️ Using existing images (if any) due to download failure")
+            # Just move existing images without downloading new ones
+            self.move_related_images(self.source_directory, destination_folder, file_id)
 
         # Update folder summary after all files are in place
         self.update_folder_summary(destination_folder)
 
-    def handle_images(self, file_id, destination_folder, details):
-        """Handle downloading new image and moving existing images"""
-        # First try to download new image
-        image_path = os.path.join(destination_folder, f"{file_id}.jpeg")
-        download_success = self.download_image(details["image_url"], image_path)
+    def handle_duplicate_images(self, folder, file_id, new_image_path):
+        """Compare and keep only the larger size image"""
+        try:
+            new_image = Image.open(new_image_path)
+            new_image_size = os.path.getsize(new_image_path)
+            new_image_resolution = new_image.size[0] * new_image.size[1]
+            new_image.close()
 
-        if download_success:
-            # If download successful, remove any existing images
-            self.remove_existing_images(destination_folder, file_id)
-            self.logger.info(f"Downloaded new image for {file_id}")
-        else:
-            # If download failed, move existing images
-            self.move_related_images(self.source_directory, destination_folder, file_id)
+            model_number = file_id.split(".")[0]
+            existing_images = []
+
+            # Collect information about existing images
+            for filename in os.listdir(folder):
+                if (
+                    filename.lower().endswith((".jpg", ".jpeg", ".png"))
+                    and filename.startswith(model_number)
+                    and os.path.join(folder, filename) != new_image_path
+                ):
+                    try:
+                        img_path = os.path.join(folder, filename)
+                        img = Image.open(img_path)
+                        resolution = img.size[0] * img.size[1]
+                        size = os.path.getsize(img_path)
+                        img.close()
+                        existing_images.append(
+                            {"path": img_path, "resolution": resolution, "size": size}
+                        )
+                    except Exception as e:
+                        self.safe_print(
+                            f"⚠️ Error processing image {filename}: {str(e)}"
+                        )
+
+            # Keep only the best quality image
+            if existing_images:
+                # Compare based on resolution first, then file size
+                best_existing = max(
+                    existing_images, key=lambda x: (x["resolution"], x["size"])
+                )
+
+                if best_existing["resolution"] > new_image_resolution or (
+                    best_existing["resolution"] == new_image_resolution
+                    and best_existing["size"] > new_image_size
+                ):
+                    # Existing image is better, remove the new one
+                    os.remove(new_image_path)
+                    self.safe_print("📸 Kept existing higher quality image")
+                else:
+                    # New image is better, remove all existing ones
+                    for img in existing_images:
+                        os.remove(img["path"])
+                    self.safe_print("📸 Replaced with higher quality downloaded image")
+            else:
+                self.safe_print("📸 Kept newly downloaded image (no existing images)")
+
+        except Exception as e:
+            self.safe_print(f"⚠️ Error comparing images: {str(e)}")
 
     def remove_existing_images(self, folder, file_id):
         """Remove existing images if new download is successful"""
