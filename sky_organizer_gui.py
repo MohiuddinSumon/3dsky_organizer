@@ -96,8 +96,12 @@ class SkyFileOrganizerGUI:
             icon_path = os.path.join(application_path, "icon.ico")
             if os.path.exists(icon_path):
                 # Set both the taskbar icon and the window icon
-                self.root.iconbitmap(default=icon_path)
-                self.root.iconbitmap(icon_path)
+                # self.root.iconbitmap(default=icon_path)
+                # self.root.iconbitmap(icon_path)
+                # Create a PhotoImage object for the icon
+                icon = tk.PhotoImage(file=icon_path)
+                # Set both the taskbar icon and the window icon
+                self.root.iconphoto(True, icon)
         except Exception:
             pass  # Skip if icon not found
 
