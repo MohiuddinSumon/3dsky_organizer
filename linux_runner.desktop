@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=3ds Organizer
+Comment=Run Python application with virtual environment
+Exec=/home/yourpath/tg-downloader/linux_runner.sh
+Terminal=true
+Categories=Utility; 
