@@ -107,7 +107,7 @@ class SkyFileOrganizerGUI:
 
         self.source_var = tk.StringVar()
         self.dest_var = tk.StringVar()
-        self.progress_var = tk.StringVar(value="Ready to start...")
+        self.progress_var = tk.DoubleVar(value=0)
         self.mode_var = tk.StringVar(value=ProcessingMode.FILE_ORGANIZER)
         self.is_running = False
         self.operation_var = tk.StringVar(value="move")
@@ -198,12 +198,28 @@ class SkyFileOrganizerGUI:
         )
 
         # Progress information
-        ttk.Label(main_frame, text="Progress:").grid(
-            row=5, column=0, sticky=tk.W, pady=5
+        progress_frame = ttk.LabelFrame(main_frame, text="Progress", padding="5")
+        progress_frame.grid(row=5, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=5)
+
+        # Add progress bar
+        self.progress_bar = ttk.Progressbar(
+            progress_frame,
+            variable=self.progress_var,
+            maximum=100,
+            mode="determinate",
+            length=400,
         )
-        ttk.Label(main_frame, textvariable=self.progress_var).grid(
-            row=5, column=1, columnspan=2, sticky=tk.W, pady=5
+        self.progress_bar.grid(
+            row=0, column=0, columnspan=2, padx=5, pady=5, sticky=(tk.W, tk.E)
         )
+
+        # Add progress label below progress bar
+        self.progress_label = ttk.Label(progress_frame, text="Ready to start...")
+        self.progress_label.grid(row=1, column=0, columnspan=2, pady=2)
+
+        # Add file count label
+        self.file_count_label = ttk.Label(progress_frame, text="")
+        self.file_count_label.grid(row=2, column=0, columnspan=2, pady=2)
 
         # Console output
         console_frame = ttk.LabelFrame(main_frame, text="Console Output", padding="5")
@@ -248,6 +264,11 @@ class SkyFileOrganizerGUI:
         if self.is_running:
             return
 
+        # Reset progress bar and labels
+        self.progress_var.set(0)
+        self.progress_label.config(text="Processing...")
+        self.file_count_label.config(text="")
+
         source_dir = self.source_var.get()
         dest_dir = self.dest_var.get()
 
@@ -281,6 +302,8 @@ class SkyFileOrganizerGUI:
             organizer = SkyFileOrganizer(
                 source_dir, dest_dir, download_previews=self.download_preview_var.get()
             )
+            organizer.gui = self  # Store reference to GUI
+
             if mode == ProcessingMode.FILE_ORGANIZER:
                 organizer.process_files()
             elif mode == ProcessingMode.FOLDER_MERGER:
@@ -308,6 +331,17 @@ class SkyFileOrganizerGUI:
             self.preview_frame.grid()
         else:
             self.preview_frame.grid_remove()
+
+    def update_progress(self, current, total, status_text=None):
+        """Update progress bar and labels"""
+        progress = (current / total * 100) if total > 0 else 0
+        self.progress_var.set(progress)
+
+        if status_text:
+            self.progress_label.config(text=status_text)
+
+        self.file_count_label.config(text=f"Processed {current} of {total} files")
+        self.root.update_idletasks()
 
 
 class SkyFileOrganizer:
@@ -368,6 +402,10 @@ class SkyFileOrganizer:
 
         self.safe_print(f"\n🔄 Starting folder {operation} process...")
 
+        # Count total files first
+        total_files = sum([len(files) for _, _, files in os.walk(source_models_dir)])
+        processed_count = 0
+
         # Walk through all categories in source
         for root, dirs, files in os.walk(source_models_dir):
             relative_path = os.path.relpath(root, source_models_dir)
@@ -387,10 +425,20 @@ class SkyFileOrganizer:
                 except Exception as e:
                     self.safe_print(f"❌ Error removing summary file: {str(e)}")
 
-            # Move all files
+            # Move/copy all files
             for file in files:
                 if file == "folder_summary.json":
                     continue
+
+                processed_count += 1
+                if hasattr(self, "gui"):
+                    self.gui.root.after(
+                        0,
+                        self.gui.update_progress,
+                        processed_count,
+                        total_files,
+                        f"{operation.capitalize()}ing: {file}",
+                    )
 
                 source_file = os.path.join(root, file)
                 dest_file = os.path.join(dest_path, file)
@@ -417,6 +465,17 @@ class SkyFileOrganizer:
 
         # Update all folder summaries from bottom up
         self.update_all_folder_summaries(dest_models_dir)
+
+        # Update progress to complete
+        if hasattr(self, "gui"):
+            self.gui.root.after(
+                0,
+                self.gui.update_progress,
+                total_files,
+                total_files,
+                "Folder merge complete!",
+            )
+
         self.safe_print(f"\n✨ Folder {operation} complete!")
 
     def collect_files(self):
@@ -431,11 +490,31 @@ class SkyFileOrganizer:
         # Supported file extensions
         supported_extensions = {".zip", ".rar", ".7z", ".jpg", ".jpeg", ".png"}
 
+        # First, count total files to process
+        total_files = sum(
+            1
+            for root, _, files in os.walk(source_dir)
+            for file in files
+            if os.path.splitext(file)[1].lower() in supported_extensions
+        )
+
+        processed_count = 0
+
         # Walk through all subdirectories
         for root, _, files in os.walk(source_dir):
             for file in files:
                 ext = os.path.splitext(file)[1].lower()
                 if ext in supported_extensions:
+                    processed_count += 1
+                    if hasattr(self, "gui"):
+                        self.gui.root.after(
+                            0,
+                            self.gui.update_progress,
+                            processed_count,
+                            total_files,
+                            f"Collecting: {file}",
+                        )
+
                     source_file = os.path.join(root, file)
                     dest_file = os.path.join(dest_dir, file)
 
@@ -452,6 +531,16 @@ class SkyFileOrganizer:
                         self.safe_print(f"✅ Copied: {file}")
                     except Exception as e:
                         self.safe_print(f"❌ Error copying {file}: {str(e)}")
+
+        # Update progress to complete
+        if hasattr(self, "gui"):
+            self.gui.root.after(
+                0,
+                self.gui.update_progress,
+                total_files,
+                total_files,
+                "File collection complete!",
+            )
 
         self.safe_print("\n✨ File collection complete!")
 
@@ -540,7 +629,6 @@ class SkyFileOrganizer:
 
     def worker(self, total_files):
         """Worker thread to process files"""
-        processed_count = 0
         while True:
             filename = self.processing_queue.get()
             if filename is None:  # Check for sentinel value
@@ -551,6 +639,17 @@ class SkyFileOrganizer:
                 with self.counter_lock:
                     self.processed_count += 1
                     current_count = self.processed_count
+
+                # Update progress in GUI
+                if hasattr(self, "gui"):
+                    self.gui.root.after(
+                        0,
+                        self.gui.update_progress,
+                        current_count,
+                        total_files,
+                        f"Processing: {filename}",
+                    )
+
                 self.safe_print(
                     f"\n📦 Processing file {current_count}/{total_files}: {filename}"
                 )
@@ -560,7 +659,6 @@ class SkyFileOrganizer:
                 self.logger.error(f"Error processing {filename}: {str(e)}")
             finally:
                 self.processing_queue.task_done()
-                # Add small delay to avoid overwhelming the API
                 time.sleep(1)
 
     def process_single_file(self, filename):
