@@ -92,7 +92,7 @@ class SkyFileOrganizerGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("3DSky File Organizer")
-        self.root.geometry("800x600")
+        self.root.geometry("800x800")
 
         # Set icon (if available)
         try:
@@ -186,25 +186,37 @@ class SkyFileOrganizerGUI:
         ).grid(row=0, column=0, padx=10)
 
         # Source directory selection
-        ttk.Label(main_frame, text="Source Directory:").grid(
-            row=3, column=0, sticky=tk.W, pady=5
+        self.source_frame = ttk.LabelFrame(
+            main_frame, text="Source Directory", padding="5"
         )
-        ttk.Entry(main_frame, textvariable=self.source_var, width=50).grid(
-            row=3, column=1, padx=5, sticky=tk.W + tk.E
+        self.source_frame.grid(
+            row=3, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=5
         )
-        ttk.Button(main_frame, text="Browse", command=self.browse_source).grid(
-            row=3, column=2, padx=5
+
+        # ttk.Label(self.source_frame, text="Source Directory:").grid(
+        #     row=0, column=0, sticky=tk.W, pady=5
+        # )
+        ttk.Entry(self.source_frame, textvariable=self.source_var, width=50).grid(
+            row=0, column=0, padx=5, sticky=tk.W + tk.E
+        )
+        ttk.Button(self.source_frame, text="Browse", command=self.browse_source).grid(
+            row=0, column=1, padx=5
         )
 
         # Destination directory selection
-        ttk.Label(main_frame, text="Destination Directory:").grid(
-            row=4, column=0, sticky=tk.W, pady=5
+        self.dest_frame = ttk.LabelFrame(
+            main_frame, text="Destination Directory", padding="5"
         )
-        ttk.Entry(main_frame, textvariable=self.dest_var, width=50).grid(
-            row=4, column=1, padx=5, sticky=tk.W + tk.E
+        self.dest_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=5)
+
+        # ttk.Label(self.dest_frame, text="Destination Directory:").grid(
+        #     row=0, column=0, sticky=tk.W, pady=5
+        # )
+        ttk.Entry(self.dest_frame, textvariable=self.dest_var, width=50).grid(
+            row=0, column=0, padx=5, sticky=tk.W + tk.E
         )
-        ttk.Button(main_frame, text="Browse", command=self.browse_dest).grid(
-            row=4, column=2, padx=5
+        ttk.Button(self.dest_frame, text="Browse", command=self.browse_dest).grid(
+            row=0, column=1, padx=5
         )
 
         # Progress information
@@ -349,6 +361,16 @@ class SkyFileOrganizerGUI:
             self.preview_frame.grid()
         else:
             self.preview_frame.grid_remove()
+
+        # Show/hide destination directory selection
+        if self.mode_var.get() in {
+            ProcessingMode.REMOVE_NUMBER,
+            ProcessingMode.DUPLICATE_FIXER,
+        }:
+            self.dest_var.set("")  # Clear the destination variable
+            self.dest_frame.grid_remove()  # Hide the destination frame
+        else:
+            self.dest_frame.grid()  # Show the destination frame
 
     def update_progress(self, current, total, status_text=None):
         """Update progress bar and labels"""
