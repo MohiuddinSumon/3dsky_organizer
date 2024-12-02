@@ -1018,15 +1018,15 @@ class SkyFileOrganizer:
 
         self.safe_print("\n🔍 Scanning for duplicate files...")
 
-        # Dictionary to store file groups (without numbers) and their variants
+        # Dictionary to store file groups (with extensions) and their variants
         file_groups = {}
 
         # First pass: Group files
         for root, _, files in os.walk(self.source_directory):
             for filename in files:
-                # Extract base name without numbers in parentheses
-                base_name = re.sub(r"\(\d+\)", "", filename)
-
+                # Remove numbers in parentheses for comparison but keep the extension
+                base_name = re.sub(r"\s*\(\d+\)\s*", "", filename).strip()
+                print(f"Base Name {base_name}, File Name {filename}")
                 file_path = os.path.join(root, filename)
                 if base_name not in file_groups:
                     file_groups[base_name] = []
@@ -1063,7 +1063,11 @@ class SkyFileOrganizer:
             if all(size == file_sizes[0][1] for _, size in file_sizes):
                 # Try to find a file without numbers in parentheses
                 clean_name_file = next(
-                    (path for path in file_paths if not re.search(r"\(\d+\)", path)),
+                    (
+                        path
+                        for path in file_paths
+                        if not re.search(r"\(\d+\)", os.path.basename(path))
+                    ),
                     file_sizes[0][0],  # If none found, use the first file
                 )
                 files_to_keep = [clean_name_file]
@@ -1086,7 +1090,9 @@ class SkyFileOrganizer:
             kept_file = files_to_keep[0]
             kept_filename = os.path.basename(kept_file)
             if re.search(r"\(\d+\)", kept_filename):
-                new_filename = re.sub(r"\(\d+\)", "", kept_filename)
+                new_filename = re.sub(
+                    r"\s*\(\d+\)\s*$", "", kept_filename
+                )  # Remove numbers in parentheses
                 new_path = os.path.join(os.path.dirname(kept_file), new_filename)
                 try:
                     os.rename(kept_file, new_path)
