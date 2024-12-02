@@ -294,10 +294,14 @@ class SkyFileOrganizerGUI:
         source_dir = self.source_var.get()
         dest_dir = self.dest_var.get()
 
-        if not source_dir or not dest_dir:
-            self.console.insert(
-                tk.END, "❌ Please select both source and destination directories.\n"
-            )
+        if not source_dir:
+            self.console.insert(tk.END, "❌ Please select source directory.\n")
+            return
+        if not dest_dir and self.mode_var.get() not in {
+            ProcessingMode.REMOVE_NUMBER,
+            ProcessingMode.DUPLICATE_FIXER,
+        }:
+            self.console.insert(tk.END, "❌ Please select destination directory.\n")
             return
 
         if not os.path.exists(source_dir) or not os.path.exists(dest_dir):
