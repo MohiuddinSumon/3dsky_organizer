@@ -1080,6 +1080,10 @@ class SkyFileOrganizer:
         for base_name, file_paths in duplicate_groups.items():
             processed_count += 1
 
+            duplicate_folder = os.path.join(self.source_directory, "Duplicates")
+            if not os.path.exists(duplicate_folder):
+                os.makedirs(duplicate_folder)
+
             if hasattr(self, "gui"):
                 self.gui.update_progress(
                     processed_count, total_groups, f"Processing: {base_name}"
@@ -1113,12 +1117,7 @@ class SkyFileOrganizer:
             for file_path, size in file_sizes:
                 if file_path not in files_to_keep:
                     try:
-                        subfolder = os.path.join(
-                            self.source_directory, "Duplicates", base_name
-                        )
-                        if not os.path.exists(subfolder):
-                            os.makedirs(subfolder)
-                        shutil.move(file_path, subfolder)
+                        shutil.move(file_path, duplicate_folder)
                         self.safe_print(f"🗑️ Moved: {os.path.basename(file_path)}")
                     except Exception as e:
                         self.safe_print(
