@@ -36,9 +36,10 @@ class IORedirector(io.StringIO):
 
 class ProcessingMode:
     FILE_ORGANIZER = "File Organizer"
-    FOLDER_MERGER = "Single Folder"
+    FOLDER_MERGER = "Folder Merger"
     FILE_COLLECTOR = "File Collector"
     DUPLICATE_FIXER = "Duplicate Fixer"
+    SINGLE_FOLDER = "Single Folder"
 
     @staticmethod
     def get_tooltip(mode: str) -> str:
