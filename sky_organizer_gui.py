@@ -304,8 +304,17 @@ class SkyFileOrganizerGUI:
             self.console.insert(tk.END, "❌ Please select destination directory.\n")
             return
 
-        if not os.path.exists(source_dir) or not os.path.exists(dest_dir):
-            self.console.insert(tk.END, "❌ One or both directories do not exist.\n")
+        if not os.path.exists(source_dir) or (
+            not os.path.exists(dest_dir)
+            and self.mode_var.get()
+            not in {
+                ProcessingMode.REMOVE_NUMBER,
+                ProcessingMode.DUPLICATE_FIXER,
+            }
+        ):
+            self.console.insert(
+                tk.END, "❌ Source and/or destination directories do not exist.\n"
+            )
             return
 
         # Disable the start button and update status
