@@ -36,7 +36,7 @@ class IORedirector(io.StringIO):
 
 class ProcessingMode:
     FILE_ORGANIZER = "File Organizer"
-    FOLDER_MERGER = "Folder Merger"
+    FOLDER_MERGER = "Single Folder"
     FILE_COLLECTOR = "File Collector"
     DUPLICATE_FIXER = "Duplicate Fixer"
 
@@ -1075,15 +1075,20 @@ class SkyFileOrganizer:
                 # Keep the largest file
                 files_to_keep = [file_sizes[0][0]]
 
-            # Remove all other files
+            # Move all other files to a subfolder
             for file_path, size in file_sizes:
                 if file_path not in files_to_keep:
                     try:
-                        os.remove(file_path)
-                        self.safe_print(f"🗑️ Removed: {os.path.basename(file_path)}")
+                        subfolder = os.path.join(
+                            self.source_directory, "Duplicates", base_name
+                        )
+                        if not os.path.exists(subfolder):
+                            os.makedirs(subfolder)
+                        shutil.move(file_path, subfolder)
+                        self.safe_print(f"🗑️ Moved: {os.path.basename(file_path)}")
                     except Exception as e:
                         self.safe_print(
-                            f"❌ Error removing {os.path.basename(file_path)}: {str(e)}"
+                            f"❌ Error Moving {os.path.basename(file_path)}: {str(e)}"
                         )
 
             # Rename the kept file if it has numbers in parentheses
