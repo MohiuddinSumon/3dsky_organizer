@@ -196,7 +196,7 @@ class SkyFileOrganizerGUI:
         # ttk.Label(self.source_frame, text="Source Directory:").grid(
         #     row=0, column=0, sticky=tk.W, pady=5
         # )
-        ttk.Entry(self.source_frame, textvariable=self.source_var, width=50).grid(
+        ttk.Entry(self.source_frame, textvariable=self.source_var, width=70).grid(
             row=0, column=0, padx=5, sticky=tk.W + tk.E
         )
         ttk.Button(self.source_frame, text="Browse", command=self.browse_source).grid(
@@ -212,7 +212,7 @@ class SkyFileOrganizerGUI:
         # ttk.Label(self.dest_frame, text="Destination Directory:").grid(
         #     row=0, column=0, sticky=tk.W, pady=5
         # )
-        ttk.Entry(self.dest_frame, textvariable=self.dest_var, width=50).grid(
+        ttk.Entry(self.dest_frame, textvariable=self.dest_var, width=70).grid(
             row=0, column=0, padx=5, sticky=tk.W + tk.E
         )
         ttk.Button(self.dest_frame, text="Browse", command=self.browse_dest).grid(
@@ -229,7 +229,7 @@ class SkyFileOrganizerGUI:
             variable=self.progress_var,
             maximum=100,
             mode="determinate",
-            length=400,
+            length=600,
         )
         self.progress_bar.grid(
             row=0, column=0, columnspan=2, padx=5, pady=5, sticky=(tk.W, tk.E)
