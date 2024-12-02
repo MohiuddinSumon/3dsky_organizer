@@ -39,6 +39,7 @@ class ProcessingMode:
     FOLDER_MERGER = "Folder Merger"
     FILE_COLLECTOR = "File Collector"
     DUPLICATE_FIXER = "Duplicate Fixer"
+    REMOVE_NUMBER = "Remove (Number)"
     SINGLE_FOLDER = "Single Folder"
 
     @staticmethod
@@ -48,6 +49,7 @@ class ProcessingMode:
             ProcessingMode.FOLDER_MERGER: "Merges two pre-organized 3DSky folders while updating folder summaries",
             ProcessingMode.FILE_COLLECTOR: "Collects all zip and image files from source directory and its subdirectories",
             ProcessingMode.DUPLICATE_FIXER: "Finds and fixes duplicate files by keeping the largest version and cleaning up names",
+            ProcessingMode.REMOVE_NUMBER: "Remove number from file name, Run this after Duplicate Fixer",
             ProcessingMode.SINGLE_FOLDER: "Copy/Move a structured folder's files into a single destination folder",
         }
         return tooltips.get(mode, "")
@@ -137,6 +139,7 @@ class SkyFileOrganizerGUI:
                 ProcessingMode.FOLDER_MERGER,
                 ProcessingMode.FILE_COLLECTOR,
                 ProcessingMode.DUPLICATE_FIXER,
+                ProcessingMode.REMOVE_NUMBER,
                 ProcessingMode.SINGLE_FOLDER,
             ]
         ):
@@ -313,11 +316,13 @@ class SkyFileOrganizerGUI:
 
             if mode == ProcessingMode.DUPLICATE_FIXER:
                 organizer.fix_duplicates()
+            elif mode == ProcessingMode.REMOVE_NUMBER:
+                organizer.remove_numbers()
             elif mode == ProcessingMode.FILE_ORGANIZER:
                 organizer.process_files()
             elif mode == ProcessingMode.FOLDER_MERGER:
                 organizer.merge_folders(operation=self.operation_var.get())
-            elif mode == ProcessingMode.SINGLE_FOLDER:  # Handle new mode
+            elif mode == ProcessingMode.SINGLE_FOLDER:
                 organizer.single_folder_operation(operation=self.operation_var.get())
             else:  # FILE_COLLECTOR
                 organizer.collect_files()
@@ -1149,7 +1154,36 @@ class SkyFileOrganizer:
                 except Exception as e:
                     self.safe_print(f"❌ Error {operation}ing {file}: {str(e)}")
 
-        self.safe_print("\n✨ Single folder operation complete!")
+        self.safe_print("\n✨ Single folder operation complete! Now Run Remove Number")
+
+    def remove_numbers(self):
+        """Remove any (number) part from file names in the source directory"""
+        if not self.source_directory:
+            self.safe_print("❌ Source directory not specified")
+            return
+
+        self.safe_print("\n🔍 Starting number removal process...")
+
+        for root, _, files in os.walk(self.source_directory):
+            for filename in files:
+                new_filename = re.sub(
+                    r"\s*\(\d+\)\s*", "", filename
+                )  # Remove (number) parts
+                if new_filename != filename:  # Only rename if there's a change
+                    old_file_path = os.path.join(root, filename)
+                    new_file_path = os.path.join(root, new_filename)
+                    if os.path.exists(
+                        new_file_path
+                    ):  # Check if the new filename already exists
+                        self.safe_print(f"⚠️ File already exists: {new_filename}")
+                    else:
+                        try:
+                            os.rename(old_file_path, new_file_path)
+                            self.safe_print(f"✅ Renamed: {filename} to {new_filename}")
+                        except Exception as e:
+                            self.safe_print(f"❌ Error renaming {filename}: {str(e)}")
+
+        self.safe_print("\n✨ Number removal complete!")
 
 
 def main():
