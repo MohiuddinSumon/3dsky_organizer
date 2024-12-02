@@ -334,6 +334,8 @@ class SkyFileOrganizerGUI:
         # Show/hide operation frame
         if self.mode_var.get() == ProcessingMode.FOLDER_MERGER:
             self.operation_frame.grid()
+        elif self.mode_var.get() == ProcessingMode.SINGLE_FOLDER:
+            self.operation_frame.grid()
         else:
             self.operation_frame.grid_remove()
 
