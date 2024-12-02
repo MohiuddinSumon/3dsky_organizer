@@ -48,7 +48,7 @@ class ProcessingMode:
             ProcessingMode.FOLDER_MERGER: "Merges two pre-organized 3DSky folders while updating folder summaries",
             ProcessingMode.FILE_COLLECTOR: "Collects all zip and image files from source directory and its subdirectories",
             ProcessingMode.DUPLICATE_FIXER: "Finds and fixes duplicate files by keeping the largest version and cleaning up names",
-            ProcessingMode.SINGLE_FOLDER: "Unmerge organizes a structured folder's files into a single destination folder",
+            ProcessingMode.SINGLE_FOLDER: "Copy/Move a structured folder's files into a single destination folder",
         }
         return tooltips.get(mode, "")
 
