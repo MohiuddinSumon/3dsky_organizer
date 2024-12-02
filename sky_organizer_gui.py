@@ -1200,6 +1200,10 @@ class SkyFileOrganizer:
 
         for root, _, files in os.walk(self.source_directory):
             for filename in files:
+
+                if hasattr(self, "gui"):
+                    self.gui.update_progress(0, 0, f"Processing: {filename}")
+
                 new_filename = re.sub(
                     r"\s*\(\d+\)\s*", "", filename
                 )  # Remove (number) parts
