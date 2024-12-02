@@ -45,9 +45,10 @@ class ProcessingMode:
     def get_tooltip(mode: str) -> str:
         tooltips = {
             ProcessingMode.FILE_ORGANIZER: "Organizes individual 3DSky files into categorized folders",
-            ProcessingMode.FOLDER_MERGER: "Merges pre-organized 3DSky folders while updating folder summaries",
+            ProcessingMode.FOLDER_MERGER: "Merges two pre-organized 3DSky folders while updating folder summaries",
             ProcessingMode.FILE_COLLECTOR: "Collects all zip and image files from source directory and its subdirectories",
             ProcessingMode.DUPLICATE_FIXER: "Finds and fixes duplicate files by keeping the largest version and cleaning up names",
+            ProcessingMode.SINGLE_FOLDER: "Unmerge organizes a structured folder's files into a single destination folder",
         }
         return tooltips.get(mode, "")
 
@@ -136,6 +137,7 @@ class SkyFileOrganizerGUI:
                 ProcessingMode.FOLDER_MERGER,
                 ProcessingMode.FILE_COLLECTOR,
                 ProcessingMode.DUPLICATE_FIXER,
+                ProcessingMode.SINGLE_FOLDER,
             ]
         ):
             rb = ttk.Radiobutton(
@@ -315,6 +317,8 @@ class SkyFileOrganizerGUI:
                 organizer.process_files()
             elif mode == ProcessingMode.FOLDER_MERGER:
                 organizer.merge_folders(operation=self.operation_var.get())
+            elif mode == ProcessingMode.SINGLE_FOLDER:  # Handle new mode
+                organizer.single_folder_operation(operation=self.operation_var.get())
             else:  # FILE_COLLECTOR
                 organizer.collect_files()
         except Exception as e:
@@ -1107,6 +1111,41 @@ class SkyFileOrganizer:
                     self.safe_print(f"❌ Error renaming {kept_filename}: {str(e)}")
 
         self.safe_print("\n✨ Duplicate fixing complete!")
+
+    def single_folder_operation(self, operation="move"):
+        """Move or copy all files from source directory to a single destination folder"""
+        source_dir, dest_dir = self.get_directories()
+
+        if not os.path.exists(dest_dir):
+            os.makedirs(dest_dir)
+
+        self.safe_print("\n🔍 Starting single folder operation...")
+
+        # Walk through all files in the source directory
+        for root, _, files in os.walk(source_dir):
+            for file in files:
+                source_file = os.path.join(root, file)
+                dest_file = os.path.join(dest_dir, file)
+
+                # Handle duplicate filenames
+                if os.path.exists(dest_file):
+                    base, ext = os.path.splitext(file)
+                    counter = 1
+                    while os.path.exists(dest_file):
+                        dest_file = os.path.join(dest_dir, f"{base}_{counter}{ext}")
+                        counter += 1
+
+                try:
+                    if operation == "move":
+                        shutil.move(source_file, dest_file)
+                        self.safe_print(f"✅ Moved: {file}")
+                    else:  # copy
+                        shutil.copy2(source_file, dest_file)
+                        self.safe_print(f"✅ Copied: {file}")
+                except Exception as e:
+                    self.safe_print(f"❌ Error {operation}ing {file}: {str(e)}")
+
+        self.safe_print("\n✨ Single folder operation complete!")
 
 
 def main():
