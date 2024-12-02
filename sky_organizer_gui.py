@@ -17,6 +17,7 @@ from tkinter import filedialog, scrolledtext, ttk
 from typing import Any, Dict
 
 import requests
+from PIL import Image
 
 
 class IORedirector(io.StringIO):
@@ -1016,16 +1017,16 @@ class SkyFileOrganizer:
             return
 
         self.safe_print("\n🔍 Scanning for duplicate files...")
-        
+
         # Dictionary to store file groups (without numbers) and their variants
         file_groups = {}
-        
+
         # First pass: Group files
         for root, _, files in os.walk(self.source_directory):
             for filename in files:
                 # Extract base name without numbers in parentheses
-                base_name = re.sub(r'\(\d+\)', '', filename)
-                
+                base_name = re.sub(r"\(\d+\)", "", filename)
+
                 file_path = os.path.join(root, filename)
                 if base_name not in file_groups:
                     file_groups[base_name] = []
@@ -1033,45 +1034,43 @@ class SkyFileOrganizer:
 
         # Filter only groups with duplicates
         duplicate_groups = {k: v for k, v in file_groups.items() if len(v) > 1}
-        
+
         if not duplicate_groups:
             self.safe_print("✨ No duplicate files found!")
             return
 
         total_groups = len(duplicate_groups)
         self.safe_print(f"\n📊 Found {total_groups} files with duplicates")
-        
+
         processed_count = 0
         for base_name, file_paths in duplicate_groups.items():
             processed_count += 1
-            
-            if hasattr(self, 'gui'):
+
+            if hasattr(self, "gui"):
                 self.gui.update_progress(
-                    processed_count,
-                    total_groups,
-                    f"Processing: {base_name}"
+                    processed_count, total_groups, f"Processing: {base_name}"
                 )
-            
+
             self.safe_print(f"\n📦 Processing duplicates for: {base_name}")
-            
+
             # Get file sizes
             file_sizes = [(path, os.path.getsize(path)) for path in file_paths]
-            
+
             # Sort by size (largest first)
             file_sizes.sort(key=lambda x: x[1], reverse=True)
-            
+
             # If all files have the same size, keep the one without numbers
             if all(size == file_sizes[0][1] for _, size in file_sizes):
                 # Try to find a file without numbers in parentheses
                 clean_name_file = next(
-                    (path for path in file_paths if not re.search(r'\(\d+\)', path)),
-                    file_sizes[0][0]  # If none found, use the first file
+                    (path for path in file_paths if not re.search(r"\(\d+\)", path)),
+                    file_sizes[0][0],  # If none found, use the first file
                 )
                 files_to_keep = [clean_name_file]
             else:
                 # Keep the largest file
                 files_to_keep = [file_sizes[0][0]]
-            
+
             # Remove all other files
             for file_path, size in file_sizes:
                 if file_path not in files_to_keep:
@@ -1079,13 +1078,15 @@ class SkyFileOrganizer:
                         os.remove(file_path)
                         self.safe_print(f"🗑️ Removed: {os.path.basename(file_path)}")
                     except Exception as e:
-                        self.safe_print(f"❌ Error removing {os.path.basename(file_path)}: {str(e)}")
-            
+                        self.safe_print(
+                            f"❌ Error removing {os.path.basename(file_path)}: {str(e)}"
+                        )
+
             # Rename the kept file if it has numbers in parentheses
             kept_file = files_to_keep[0]
             kept_filename = os.path.basename(kept_file)
-            if re.search(r'\(\d+\)', kept_filename):
-                new_filename = re.sub(r'\(\d+\)', '', kept_filename)
+            if re.search(r"\(\d+\)", kept_filename):
+                new_filename = re.sub(r"\(\d+\)", "", kept_filename)
                 new_path = os.path.join(os.path.dirname(kept_file), new_filename)
                 try:
                     os.rename(kept_file, new_path)
