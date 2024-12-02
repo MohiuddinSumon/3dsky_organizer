@@ -1102,13 +1102,15 @@ class SkyFileOrganizer:
             kept_file = files_to_keep[0]
             kept_filename = os.path.basename(kept_file)
             if re.search(r"\(\d+\)", kept_filename):
-                new_filename = re.sub(
-                    r"\s*\(\d+\)\s*$", "", kept_filename
-                )  # Remove numbers in parentheses
-                new_path = os.path.join(os.path.dirname(kept_file), new_filename)
+                # new_filename = re.sub(
+                #     r"\s*\(\d+\)\s*$", "", kept_filename
+                # )  # Remove numbers in parentheses
+                new_path = os.path.join(
+                    os.path.dirname(kept_file), base_name
+                )  # base name should be without number we are processing this above
                 try:
                     os.rename(kept_file, new_path)
-                    self.safe_print(f"✅ Renamed to: {new_filename}")
+                    self.safe_print(f"✅ Renamed to: {base_name}")
                 except Exception as e:
                     self.safe_print(f"❌ Error renaming {kept_filename}: {str(e)}")
 
