@@ -1153,7 +1153,7 @@ class SkyFileOrganizer:
                 except Exception as e:
                     self.safe_print(f"❌ Error renaming {kept_filename}: {str(e)}")
 
-        self.safe_print("\n✨ Duplicate fixing complete!")
+        self.safe_print("\n✨ Duplicate fixing complete! Now Run Remove Number")
 
     def single_folder_operation(self, operation="move"):
         """Move or copy all files from source directory to a single destination folder"""
@@ -1188,7 +1188,7 @@ class SkyFileOrganizer:
                 except Exception as e:
                     self.safe_print(f"❌ Error {operation}ing {file}: {str(e)}")
 
-        self.safe_print("\n✨ Single folder operation complete! Now Run Remove Number")
+        self.safe_print("\n✨ Single folder operation complete!")
 
     def remove_numbers(self):
         """Remove any (number) part from file names in the source directory"""
